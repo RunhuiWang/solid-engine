@@ -1,7 +1,10 @@
 
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -9,15 +12,20 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Scanner;
 
+import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
 
 
-public class Visualization extends JFrame{
+public class Visualization extends JFrame implements ComponentListener{
 	
 	// map from ID to coordinate
 	private HashMap<Integer, Coordinate> mMap;
 	private ArrayList<Trajectory> mList;
+	
+	// segments of trajectories
+	//private ArrayList<Segment> mSegmentList;
 	
 	// panel
 	private TPanel mPanel;
@@ -26,6 +34,7 @@ public class Visualization extends JFrame{
 	private int maxX;
 	private int maxY;
 	
+	// width and height in real world
 	private int width;
 	private int height;
 	
@@ -34,6 +43,8 @@ public class Visualization extends JFrame{
 	
 	private int preferredPanelWidth = 800;
 	private int preferredPanelHeight = 600;
+	
+	private static final int BORDER_SIZE = 20;
 	
 	/**
 	 * Read road segments mid point file and map the id with mid point
@@ -171,18 +182,28 @@ public class Visualization extends JFrame{
 		
 		scaleRatioX = scaleRatioX > 0 ? scaleRatioX : 1;
 		scaleRatioY = scaleRatioY > 0 ? scaleRatioY : 1;
-				
+		
 		print("("+minX+","+minY+") ("+maxX+","+maxY+") Rect : " 
 						+ width + " x " + height);
 		print("scale ratio : "+ scaleRatioX + " "+ scaleRatioY);
+	
+		print(width+" "+height);
 	}
 	/**
 	 * create an panel for drawing
 	 */
 	private void initComponents() {
 		mPanel = new TPanel();
-		mPanel.setPreferredSize(
-				new Dimension(preferredPanelWidth, preferredPanelHeight));
+		// calculate panel size
+		int width = preferredPanelWidth + BORDER_SIZE + BORDER_SIZE;
+		int height = preferredPanelHeight + BORDER_SIZE + BORDER_SIZE;
+		
+		mPanel.setPreferredSize( new Dimension(width, height));
+		mPanel.setBackground(Color.WHITE);
+		mPanel.addComponentListener(this);
+		//mPanel.setBorder(new EmptyBorder(120,120,120,120));
+		int x = BORDER_SIZE;
+		//mPanel.setBorder(BorderFactory.createMatteBorder(x, x, x, x, Color.GRAY));
 		
 		this.setContentPane(mPanel);
 		// *** frame size includes the task bar, so use panel to set the size
@@ -292,7 +313,7 @@ public class Visualization extends JFrame{
 			super.paintComponent(g);
 			Coordinate start = null;
 			Coordinate end = null;
-			//g.drawLine(0, 0, 200, 200);
+			g.setColor(new Color(0,0,0,20));
 			
 			// traverse all trajectories
 			for (Trajectory traj : mList) {
@@ -303,12 +324,19 @@ public class Visualization extends JFrame{
 					if (start != null) {
 						end = start;
 						start = c;
-						int x1 = (int) ((start.getValue().get(0) - minX) / scaleRatioX);
-						int y1 = (int) ((start.getValue().get(1) - minY) / scaleRatioY);
-						int x2 = (int) ((end.getValue().get(0) - minX) / scaleRatioX);
-						int y2 = (int) ((end.getValue().get(1) - minY) / scaleRatioY);
+						ArrayList<Integer> value = start.getValue();
+						int x1 = (int) ((value.get(0) - minX) / scaleRatioX);
+						int y1 = (int) ((value.get(1) - minY) / scaleRatioY);
+						
+						value = end.getValue();
+						int x2 = (int) ((value.get(0) - minX) / scaleRatioX);
+						int y2 = (int) ((value.get(1) - minY) / scaleRatioY);
+						
+						x1 += BORDER_SIZE;
+						x2 += BORDER_SIZE;
+						y1 += BORDER_SIZE;
+						y2 += BORDER_SIZE;
 						g.drawLine(x1, y1, x2, y2);
-						//System.out.println("("+x1+","+y1+") ("+x2+","+y2 +")");
 					}
 					else {
 						start = c;
@@ -316,5 +344,39 @@ public class Visualization extends JFrame{
 				}
 			}
 		}
+	}
+	@Override
+	public void componentHidden(ComponentEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void componentMoved(ComponentEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void componentResized(ComponentEvent arg0) {
+		
+		// get panel size
+		int width = mPanel.getWidth();
+		int height = mPanel.getHeight();
+		
+		// set drawing canvas size
+		this.preferredPanelWidth = width - BORDER_SIZE - BORDER_SIZE;
+		this.preferredPanelHeight = height - BORDER_SIZE - BORDER_SIZE;
+		
+		// set scale ratio
+		scaleRatioX = (double)this.width / (double)preferredPanelWidth;
+		scaleRatioY = (double)this.height / (double)preferredPanelHeight;
+		
+		// repaint
+		this.repaint();
+		
+	}
+	@Override
+	public void componentShown(ComponentEvent arg0) {
+		// TODO Auto-generated method stub
+		
 	}
 }
