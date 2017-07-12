@@ -1,8 +1,10 @@
 
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.io.File;
@@ -85,8 +87,8 @@ public class Visualization extends JFrame implements ComponentListener{
 		
 		// create a new list
 		mList = new ArrayList<>();
-        // read road segment points file
-        File file = new File("trajectoryset");
+        // trajectory file
+        File file = new File("trajectoryset311");
         
         try {
             Scanner scLine = new Scanner(file);
@@ -121,7 +123,7 @@ public class Visualization extends JFrame implements ComponentListener{
             }
             scLine.close();
         } catch (FileNotFoundException e) {
-            System.err.println("Failed to open " + file);
+        	System.err.println("Failed to open " + file+ " : " + e.getMessage());
             System.exit(1);
         }
         print(mList.size()+"");
@@ -311,13 +313,15 @@ public class Visualization extends JFrame implements ComponentListener{
 		@Override
 		public void paintComponent(Graphics g) {
 			super.paintComponent(g);
-			Coordinate start = null;
-			Coordinate end = null;
-			g.setColor(new Color(0,0,0,20));
-			
+			Graphics2D g2 = (Graphics2D) g;
+		    g2.setStroke(new BasicStroke(3));
 			// traverse all trajectories
 			for (Trajectory traj : mList) {
+				drawStartEndPoint(g, traj);
+				g.setColor(new Color(0,0,0,50));
 				// traverse each coordinate in the trajectory
+				Coordinate start = null;
+				Coordinate end = null;
 				for (Integer id : traj.getList()) {
 					Coordinate c = mMap.get(id);
 					//System.out.println(c.toString());
@@ -337,6 +341,7 @@ public class Visualization extends JFrame implements ComponentListener{
 						y1 += BORDER_SIZE;
 						y2 += BORDER_SIZE;
 						g.drawLine(x1, y1, x2, y2);
+						g.fillOval(x1-5, y1-5, 10, 10);
 					}
 					else {
 						start = c;
@@ -345,6 +350,29 @@ public class Visualization extends JFrame implements ComponentListener{
 			}
 		}
 	}
+	
+	private void drawStartEndPoint(Graphics g, Trajectory t) {
+		Coordinate start = mMap.get(t.getList().getFirst());
+		Coordinate end = mMap.get(t.getList().getLast());
+		ArrayList<Integer> value = start.getValue();
+		int x1 = (int) ((value.get(0) - minX) / scaleRatioX);
+		int y1 = (int) ((value.get(1) - minY) / scaleRatioY);
+		
+		value = end.getValue();
+		int x2 = (int) ((value.get(0) - minX) / scaleRatioX);
+		int y2 = (int) ((value.get(1) - minY) / scaleRatioY);
+		
+		x1 += BORDER_SIZE;
+		x2 += BORDER_SIZE;
+		y1 += BORDER_SIZE;
+		y2 += BORDER_SIZE;
+		g.setColor(Color.GREEN);
+		g.fillOval(x1-10, y1-10, 20, 20);
+
+		g.setColor(Color.RED);
+		g.fillOval(x2-10, y2-10, 20, 20);
+	}
+	
 	@Override
 	public void componentHidden(ComponentEvent arg0) {
 		// TODO Auto-generated method stub
